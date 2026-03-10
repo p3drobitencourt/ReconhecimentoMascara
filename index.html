@@ -141,12 +141,56 @@
             transform: none;
         }
 
+        button[type="button"] {
+            background: #3498db;
+            color: white;
+        }
+
+        button[type="button"]:hover {
+            background: #2980b9;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+        }
+
+        button[type="button"]:active {
+            transform: translateY(0);
+        }
+
         .status {
             text-align: center;
             font-size: 12px;
             color: #888;
             margin-top: 20px;
             font-weight: 300;
+        }
+
+        #file-input {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        #file-input:hover {
+            border-color: #3498db;
+            background: #f9f9f9;
+        }
+
+        #file-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        #file-preview-container img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
         }
 
         @media (max-width: 600px) {
@@ -165,6 +209,19 @@
             button {
                 padding: 12px 32px;
                 font-size: 14px;
+            }
+
+            .button-container {
+                flex-wrap: wrap;
+            }
+
+            button[type="button"] {
+                width: 100%;
+            }
+
+            #file-input {
+                padding: 10px;
+                font-size: 12px;
             }
         }
 
@@ -187,7 +244,17 @@
 
             <div id="webcam-container"></div>
 
+            <div class="button-container">
+                <button type="button" onclick="switchCamera()">Alternar Câmera</button>
+            </div>
+
             <div id="label-container"></div>
+
+            <div style="margin-top: 20px; border: 1px dashed #ccc; padding: 10px; border-radius: 8px;">
+                <h3 style="margin-bottom: 10px; color: #1a1a1a;">Testar com Arquivo (Dataset)</h3>
+                <input type="file" id="file-input" accept="image/*" onchange="predictFromFile()" style="padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;">
+                <div id="file-preview-container" style="margin-top: 10px; display: flex; justify-content: center;"></div>
+            </div>
 
             <div class="status">
                 <p>
