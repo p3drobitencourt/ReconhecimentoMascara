@@ -6,6 +6,8 @@ const URL = "./my_model/";
 let currentFacingMode = "user"; // Começa
 //  com a frontal
 let lastUpdateTime = 0;
+let loopStarted = false;
+let selectedImageElement = null;
 let model, webcam, labelContainer, maxPredictions;
 
 /**
@@ -28,12 +30,20 @@ async function loadModel() {
 async function init() {
     await loadModel();
 
+    if (webcam) {
+        await webcam.stop();
+    }
+
     // Convenience function to setup a webcam
     const flip = (currentFacingMode === "user");
     webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
     await webcam.setup({ facingMode: currentFacingMode }); // request access to the webcam
     await webcam.play();
-    window.requestAnimationFrame(loop);
+
+    if (!loopStarted) {
+        loopStarted = true;
+        window.requestAnimationFrame(loop);
+    }
 
     // append elements to the DOM
     const container = document.getElementById("webcam-container");
@@ -41,6 +51,7 @@ async function init() {
     container.appendChild(webcam.canvas);
     labelContainer = document.getElementById("label-container");
     labelContainer.innerHTML = "";
+    updateCameraButtons(true);
 }
 
 /**
@@ -60,6 +71,26 @@ async function switchCamera() {
     }
 }
 
+async function stopCamera() {
+    if (webcam) {
+        await webcam.stop();
+        webcam = null;
+    }
+
+    const container = document.getElementById("webcam-container");
+    container.innerHTML = "";
+    updateCameraButtons(false);
+}
+
+function updateCameraButtons(isRunning) {
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    if (!startBtn || !stopBtn) return;
+    startBtn.disabled = isRunning;
+    stopBtn.disabled = !isRunning;
+}
+
 async function loop() {
     if (webcam && webcam.canvas) {
         webcam.update(); // update the webcam frame
@@ -73,6 +104,16 @@ async function loop() {
  * @param {Array} prediction - Array de predições do modelo
  */
 function predictClass(prediction) {
+    if (!labelContainer) {
+        labelContainer = document.getElementById("label-container");
+    }
+
+    const { bestClass, highestProb, statusColor } = getBestPrediction(prediction);
+
+    labelContainer.innerHTML = renderResultCard(bestClass, highestProb, statusColor);
+}
+
+function getBestPrediction(prediction) {
     let highestProb = 0;
     let bestClass = "";
 
@@ -88,7 +129,11 @@ function predictClass(prediction) {
         statusColor = "#e74c3c"; // Vermelho para "Sem Máscara"
     }
 
-    labelContainer.innerHTML = `
+    return { bestClass, highestProb, statusColor };
+}
+
+function renderResultCard(bestClass, highestProb, statusColor) {
+    return `
         <div style="background: #f0f0f0; padding: 10px; border-radius: 5px; border-left: 5px solid ${statusColor}">
             <strong>RESULTADO:</strong>
             <h2 style="color: ${statusColor}; margin: 5px 0;">${bestClass.toUpperCase()}</h2>
@@ -113,32 +158,68 @@ async function predict() {
  * Função: Processa arquivo de imagem selecionado
  */
 async function predictFromFile() {
+    await verifySelectedFile();
+}
+
+function handleFileSelection() {
     const fileInput = document.getElementById('file-input');
     const previewContainer = document.getElementById('file-preview-container');
+    const fileResult = document.getElementById('file-result');
+    const verifyFileBtn = document.getElementById('verifyFileBtn');
     
     if (fileInput.files && fileInput.files[0]) {
         const reader = new FileReader();
 
-        reader.onload = async function (e) {
+        reader.onload = function (e) {
             previewContainer.innerHTML = `<img id="target-image" src="${e.target.result}" width="200" style="border-radius: 8px;">`;
-            const imgElement = document.getElementById('target-image');
-            imgElement.onload = async () => {
-                await runStaticPrediction(imgElement);
+            selectedImageElement = document.getElementById('target-image');
+            selectedImageElement.onload = () => {
+                verifyFileBtn.disabled = false;
+                fileResult.innerHTML = `
+                    <div style="background: #f0f0f0; padding: 10px; border-radius: 5px; border-left: 5px solid #3498db;">
+                        <strong>ARQUIVO CARREGADO:</strong>
+                        <small> Clique em <strong>Verificar Imagem</strong> para classificar.</small>
+                    </div>`;
             };
         };
 
         reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        verifyFileBtn.disabled = true;
+        selectedImageElement = null;
+        fileResult.innerHTML = "";
     }
+}
+
+async function verifySelectedFile() {
+    const fileResult = document.getElementById('file-result');
+
+    if (!selectedImageElement) {
+        fileResult.innerHTML = `
+            <div style="background: #f0f0f0; padding: 10px; border-radius: 5px; border-left: 5px solid #e67e22;">
+                <strong>ATENÇÃO:</strong>
+                <small> Selecione uma imagem antes de verificar.</small>
+            </div>`;
+        return;
+    }
+
+    await runStaticPrediction(selectedImageElement, true);
 }
 
 /**
  * Função: Executa a predição em um elemento de imagem estático
  * @param {HTMLImageElement} imgElement 
  */
-async function runStaticPrediction(imgElement) {
+async function runStaticPrediction(imgElement, showInFileResult = false) {
     if (model == null) 
         await loadModel();
      
     const prediction = await model.predict(imgElement);
     predictClass(prediction);
+
+    if (showInFileResult) {
+        const { bestClass, highestProb, statusColor } = getBestPrediction(prediction);
+        const fileResult = document.getElementById('file-result');
+        fileResult.innerHTML = renderResultCard(bestClass, highestProb, statusColor);
+    }
 }

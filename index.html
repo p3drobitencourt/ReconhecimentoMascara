@@ -141,6 +141,27 @@
             transform: none;
         }
 
+        #stopBtn {
+            background: #c0392b;
+            color: white;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        #stopBtn:hover {
+            background: #a93226;
+            box-shadow: 0 6px 20px rgba(192, 57, 43, 0.25);
+            transform: translateY(-2px);
+        }
+
+        #stopBtn:disabled {
+            background: #d7d7d7;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
         button[type="button"] {
             background: #3498db;
             color: white;
@@ -193,6 +214,26 @@
             margin-top: 10px;
         }
 
+        #verifyFileBtn {
+            margin-top: 10px;
+            width: 100%;
+            background: #2c3e50;
+            color: white;
+        }
+
+        #verifyFileBtn:disabled {
+            background: #d7d7d7;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #file-result {
+            margin-top: 12px;
+            min-height: 58px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 24px;
@@ -240,6 +281,7 @@
         <div class="content">
             <div class="button-container">
                 <button id="startBtn" type="button" onclick="init()">Iniciar Câmera</button>
+                <button id="stopBtn" type="button" onclick="stopCamera()" disabled>Desligar Câmera</button>
             </div>
 
             <div id="webcam-container"></div>
@@ -252,8 +294,10 @@
 
             <div style="margin-top: 20px; border: 1px dashed #ccc; padding: 10px; border-radius: 8px;">
                 <h3 style="margin-bottom: 10px; color: #1a1a1a;">Testar com Arquivo (Dataset)</h3>
-                <input type="file" id="file-input" accept="image/*" onchange="predictFromFile()" style="padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;">
+                <input type="file" id="file-input" accept="image/*" onchange="handleFileSelection()" style="padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;">
+                <button id="verifyFileBtn" type="button" onclick="verifySelectedFile()" disabled>Verificar Imagem</button>
                 <div id="file-preview-container" style="margin-top: 10px; display: flex; justify-content: center;"></div>
+                <div id="file-result"></div>
             </div>
 
             <div class="status">
